@@ -67,7 +67,7 @@ object QuickGraphics {
         val sceneText = label("")
         val scene = SeekBar(activity).apply { max = 10 }
         val scaleText = label("")
-        val scale = SeekBar(activity).apply { max = 2 }
+        val scale = SeekBar(activity).apply { max = 40 }
         val fpsText = label("")
         val fps = SeekBar(activity).apply { max = 6 }
         fun switch(text: String) = SwitchCompat(activity).apply { this.text = text; setPadding(0, px(6), 0, px(6)) }
@@ -80,9 +80,9 @@ object QuickGraphics {
         fun refresh() {
             sceneText.text = activity.getString(R.string.qg_scene, v.scene)
             fpsText.text = activity.getString(R.string.qg_fps, v.fps)
-            scaleText.text = activity.getString(R.string.qg_scale, v.scale)
-            scale.progress = v.scale - 1
-            scene.isEnabled = v.scale == 1
+            scaleText.text = activity.getString(R.string.qg_scale, v.scale, 1280 * v.scale / 100, 720 * v.scale / 100)
+            scale.progress = (v.scale - 100) / 5
+            scene.isEnabled = v.scale == 100
             scene.progress = (v.scene - 50) / 5
             fps.progress = (v.fps - 30) / 5
             msaa.isChecked = v.msaa; fsr.isChecked = v.fsr; heat.isChecked = v.heat
@@ -94,7 +94,7 @@ object QuickGraphics {
         tierButtons.forEachIndexed { i, button ->
             button.setOnClickListener {
                 val p = DeviceProfile.preset(tiers[i])
-                v.scene = p.sceneScalePercent; v.scale = 1; v.msaa = p.multisampling; v.fsr = p.fsr; v.fps = p.fpsLimit
+                v.scene = p.sceneScalePercent; v.scale = 100; v.msaa = p.multisampling; v.fsr = p.fsr; v.fps = p.fpsLimit
                 v.heat = p.heatScale; v.lowMemory = p.lowMemory; v.preset = tiers[i].name
                 quiet = true; refresh(); quiet = false
             }
@@ -111,9 +111,9 @@ object QuickGraphics {
         scale.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(bar: SeekBar, value: Int, fromUser: Boolean) {
                 if (!fromUser) return
-                v.scale = value + 1
-                scaleText.text = activity.getString(R.string.qg_scale, v.scale)
-                scene.isEnabled = v.scale == 1
+                v.scale = 100 + value * 5
+                scaleText.text = activity.getString(R.string.qg_scale, v.scale, 1280 * v.scale / 100, 720 * v.scale / 100)
+                scene.isEnabled = v.scale == 100
                 touched()
             }
             override fun onStartTrackingTouch(bar: SeekBar) = Unit
