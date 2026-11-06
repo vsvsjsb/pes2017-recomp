@@ -16,7 +16,7 @@
     <string name="qg_title">Graphics &amp; performance</string>
     <string name="qg_preset">Preset</string>
     <string name="qg_scene">Scene resolution: %1$d%%</string>
-    <string name="qg_scale">Internal resolution: %1$dx (1x = 1280x720; 2x or 3x for powerful GPUs)</string>
+    <string name="qg_scale">Internal resolution: %1$d%% (%2$dx%3$d)</string>
     <string name="qg_fps">Frame rate limit: %1$d</string>
     <string name="qg_msaa">Anti-aliasing (MSAA)</string>
     <string name="qg_fsr">FSR upscaler</string>
@@ -264,8 +264,8 @@
     <string name="section_files">Game files</string>
     <string name="resolution">Display resolution: %1$d%%</string>
     <string name="resolution_hint">How many pixels are drawn on the screen, as a share of it. The display scales the result up. PES draws at a fixed 1280\u00d7720, so this mostly trades sharpness for battery.</string>
-    <string name="render_scale">Internal render multiplier: %1$dx</string>
-    <string name="render_scale_hint">Draws the match at 2x or 3x the console\u2019s 1280\u00d7720 (PES17_SCALE). Needs a lot of GPU; leave at 1x unless the phone has room to spare.</string>
+    <string name="render_scale">Internal render resolution: %1$d%% (%2$dx%3$d)</string>
+    <string name="render_scale_hint">Scales the internal render size from 100% (1280x720) to 300% (3840x2160), in 5% steps. Higher settings need much more GPU memory and power.</string>
     <string name="msaa">Smooth edges (multisampling)</string>
     <string name="msaa_hint">Keeps thin pitch lines from breaking into dashes. Cheap on most phones; turn it off if the match stutters.</string>
     <string name="prefer_60">Lock display to 60 Hz</string>
