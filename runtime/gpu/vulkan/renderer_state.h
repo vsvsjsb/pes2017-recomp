@@ -268,15 +268,13 @@ namespace vk::renderer::detail
         // colour, depth and stencil alike.
         bool msaa = false;
         VkSampleCountFlags sampleCounts = VK_SAMPLE_COUNT_1_BIT;
-        // PES17_SCALE: how many times wider and taller than the title's every
-        // EDRAM surface and resolve copy is. The title is not told: a Target's
-        // and a Resolved's sizes, and every rectangle worked out from the
-        // registers, stay the title's, and are multiplied where they are
-        // handed to Vulkan (Scaled).
-        uint32_t scale = 1;
+        // PES17_SCALE: fractional multiplier for every EDRAM surface and resolve
+        // copy. Guest sizes remain unchanged; coordinates are multiplied where
+        // they are handed to Vulkan (Scaled).
+        float scale = 1.0f;
         // PES17_SCENE_SCALE (0.5-1): the full-frame surfaces are drawn this much
         // smaller each way and everything that reads them follows; the present
-        // stretches the frame back. Only with scale 1.
+        // stretches the frame back. Only at the native 1.0 render scale.
         float sceneScale = 1.0f;
         // PES17_DYNAMIC_SCALE (dynamic_scale.h): the scene scale moved while the match
         // runs, from the passes' GPU time and the phone's thermal status. sceneScale
@@ -611,13 +609,11 @@ namespace vk::renderer::detail
     constexpr VkPipelineStageFlags kShaderStages =
         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
-    // The title's pixels as the images': State::scale (whole numbers, every
-    // surface) times a surface's own scale (the scene render scale, below 1,
-    // only for full-frame surfaces).
+    // The title's pixels as the images': global render scale times a surface's
+    // own scale (the scene render scale, below 1, only for full-frame surfaces).
     inline int32_t HostCoord(int32_t guest, float scale = 1.0f)
     {
-        return scale == 1.0f ? guest * int32_t(g.scale)
-                             : int32_t(std::lround(double(guest) * scale)) * int32_t(g.scale);
+        return int32_t(std::lround(double(guest) * double(scale) * double(g.scale)));
     }
     inline uint32_t HostOf(uint32_t guest, float scale = 1.0f)
     {
@@ -640,7 +636,7 @@ namespace vk::renderer::detail
     // effect buffers and kit compositions keep their sizes.
     inline float SceneScaleFor(uint32_t width)
     {
-        return (g.scale == 1 && width >= 1152) ? g.sceneScale : 1.0f;
+        return (g.scale == 1.0f && width >= 1152) ? g.sceneScale : 1.0f;
     }
 
     inline uint32_t FindMemory(uint32_t allowed, VkMemoryPropertyFlags want)

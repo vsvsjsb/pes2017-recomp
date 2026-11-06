@@ -210,19 +210,18 @@ A resolve does not end the submission unless the slot's arena share is half used
 
 ## Resolution scale
 
-`PES17_SCALE=2` or `3`, read once at start-up, makes every EDRAM surface, every
-resolve copy and the present images that many times wider and taller. The
-title is not told. A `Target`'s and a `Resolved`'s sizes, the keys, and every
-rectangle worked out from the registers stay in the title's pixels, and are
-multiplied where they are handed to Vulkan: image extents, render areas,
-viewport and scissor, and the regions of resolves, copies and blits. So the
-frame is still "a colour resolve of 1280x720". The scale is lowered until
-4096 of the title's pixels fit one of the device's images.
+`PES17_SCALE=1.00` to `3.00`, read once at start-up, multiplies every EDRAM
+surface, resolve copy and present image by that factor in both dimensions.
+The title is not told. A `Target`'s and a `Resolved`'s guest sizes, the keys,
+and every rectangle worked out from the registers stay in the title's pixels,
+and are scaled where they are handed to Vulkan: image extents, render areas,
+viewport and scissor, and the regions of resolves, copies and blits. For
+example, 1.50 produces a 1920x1080 frame and 2.00 produces 2560x1440. Fractional
+edges are rounded to the nearest host pixel. The scale is reduced if necessary
+so a 4096-pixel guest surface fits the device's maximum image dimension.
 
-The scale is a whole number, so the title's scissors and resolve rectangles
-land on pixel boundaries, and it applies to every surface, since the passes
-read each other's at matching sizes. Three things are not a plain
-multiplication:
+The scale applies to every surface, since the passes read each other's at
+matching sizes. Three things are not a plain multiplication:
 
 - **Fetches of a resolve's copy.** The translated shader takes a texture's
   size from the bound image, for half-texel offsets and unnormalised
@@ -235,8 +234,7 @@ multiplication:
 - **Depth bias.** The slope term is multiplied by the scale, as Xenia does: a
   slope is depth per pixel, and the pixels are smaller.
 
-The launcher's RESOLUTION entry keeps the scale in `.env` as
-`PES17_SCALE=<n>` ([switches.md](switches.md#the-settings-file)).
+The launcher keeps the scale in `.env` as `PES17_SCALE=<n>` ([switches.md](switches.md#the-settings-file)).
 
 ## Multisampling
 

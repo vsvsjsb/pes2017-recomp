@@ -309,7 +309,7 @@ namespace vk::renderer::detail
         Shader entry;
         entry.type = type;
         entry.code.assign(code, code + words);
-        entry.translation = shader::Translate(type, code, words, g.scale);
+        entry.translation = shader::Translate(type, code, words, g.scale > 1.0f ? 2u : 1u);
         if (entry.translation.ok && entry.translation.droppedMemoryExports)
             LOGW("shader: a %s program (%u dwords) writes guest memory (memory export), which is not emulated: %u export(s) dropped",
                  type == shader::Type::Vertex ? "vertex" : "pixel", unsigned(words), unsigned(entry.translation.droppedMemoryExports));

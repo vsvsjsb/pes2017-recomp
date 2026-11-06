@@ -112,8 +112,11 @@ class SettingsActivity : AppCompatActivity() {
         switch(R.id.audio, prefs.audioEnabled) { prefs.audioEnabled = it }
 
         // ---- advanced: rendering, memory, testing ----
-        bar(R.id.render_scale, R.id.render_scale_label, 2, prefs.renderScale - 1,
-            { getString(R.string.render_scale, it + 1) }) { prefs.renderScale = it + 1 }
+        bar(R.id.render_scale, R.id.render_scale_label, 40, (prefs.renderScale - 100) / 5,
+            {
+                val percent = 100 + it * 5
+                getString(R.string.render_scale, percent, 1280 * percent / 100, 720 * percent / 100)
+            }) { prefs.renderScale = 100 + it * 5 }
         switch(R.id.load_scale, prefs.loadScale) { prefs.loadScale = it; presetTouched() }
         switch(R.id.low_memory, prefs.lowMemory) { prefs.lowMemory = it; presetTouched() }
         // 0 means "let the runtime decide"; then 128 MB steps to 2 GB.

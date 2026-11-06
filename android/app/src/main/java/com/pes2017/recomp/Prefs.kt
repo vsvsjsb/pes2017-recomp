@@ -33,12 +33,16 @@ class Prefs(context: Context) {
         set(value) = store.edit().putFloat(KEY_RESOLUTION, value.coerceIn(0.35f, 1.0f)).apply()
 
     /**
-     * Internal Vulkan render scale multiplier (PES17_SCALE):
-     * 1 = 1x native base dimensions, 2 = 2x multiplier, 3 = 3x multiplier.
+     * Internal Vulkan render scale, stored as a percentage from 100 to 300.
+     * 100 = 1280x720, 150 = 1920x1080, 200 = 2560x1440, 300 = 3840x2160.
+     * Values are stepped in 5% increments by the graphics controls. The getter
+     * also upgrades the old stored 1x/2x/3x values without losing the setting.
      */
     var renderScale: Int
-        get() = store.getInt(KEY_RENDER_SCALE, 1).coerceIn(1, 3)
-        set(value) = store.edit().putInt(KEY_RENDER_SCALE, value.coerceIn(1, 3)).apply()
+        get() = store.getInt(KEY_RENDER_SCALE, 100).let {
+            if (it in 1..3) it * 100 else it.coerceIn(100, 300)
+        }
+        set(value) = store.edit().putInt(KEY_RENDER_SCALE, value.coerceIn(100, 300)).apply()
 
     /**
      * How large the 3D scene is drawn, in percent of 1280x720 (PES17_SCENE_SCALE,
