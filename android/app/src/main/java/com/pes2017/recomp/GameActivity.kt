@@ -742,9 +742,10 @@ class GameActivity : AppCompatActivity(), NativeListener {
         NativeBridge.nativeSetOption("PES17_FULLSCREEN", "1")
         NativeBridge.nativeSetOption("PES17_NO_AUDIO", if (prefs.audioEnabled) "" else "1")
         NativeBridge.nativeSetOption("PES17_NO_MSAA", if (prefs.multisampling) "0" else "1")   // "0", not unset: perf.cpp defaults an unset one to 1
-        if (prefs.renderScale in 1..3) {
-            NativeBridge.nativeSetOption("PES17_SCALE", prefs.renderScale.toString())
-        }
+        NativeBridge.nativeSetOption(
+            "PES17_SCALE",
+            String.format(Locale.US, "%.2f", prefs.renderScale / 100.0)
+        )
         NativeBridge.nativeSetOption("PES17_STUTTERS", "1")
         NativeBridge.nativeSetOption("PES17_BLACK_GUARD", if (prefs.blackGuard) "1" else "")
         // Settings > Experiments. Unset when off, so the runtime's own default for the phone applies.
