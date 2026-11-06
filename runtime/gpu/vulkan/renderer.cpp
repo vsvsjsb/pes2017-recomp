@@ -205,22 +205,22 @@ bool vk::renderer::Initialise()
                      : "the device draws at 1x only");
     }
 
-    // PES17_SCALE=2 or 3 draws everything that many times wider and taller. A
-    // surface is at most 4096 of the title's pixels either way, and the scale
-    // is lowered until that fits an image of the device's.
+    // PES17_SCALE=1.00..3.00 multiplies every render target's width and height.
+    // Clamp it to the device's maximum image dimension before allocating targets.
     {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(g.physical, &properties);
-        const uint32_t asked = uint32_t(std::clamp<uint64_t>(env::Number("PES17_SCALE", 1), 1, 3));
-        g.scale = asked;
-        while (g.scale > 1 && 4096 * g.scale > properties.limits.maxImageDimension2D) g.scale--;
-        g.presentWidth *= g.scale;
-        g.presentHeight *= g.scale;
-        if (g.scale != asked)
-            LOGW("renderer: PES17_SCALE=%u is more than the device's %u-pixel images hold",
-                 asked, properties.limits.maxImageDimension2D);
-        if (g.scale > 1)
-            LOGI("renderer: drawing at %ux the title's sizes, a %ux%u frame", g.scale,
+        const double asked = std::clamp(env::Real("PES17_SCALE", 1.0), 1.0, 3.0);
+        const double deviceMaximum = std::max(
+            1.0, double(properties.limits.maxImageDimension2D) / 4096.0);
+        g.scale = float(std::min(asked, deviceMaximum));
+        g.presentWidth = HostOf(1280);
+        g.presentHeight = HostOf(720);
+        if (double(g.scale) + 0.0001 < asked)
+            LOGW("renderer: PES17_SCALE=%.2f was limited to %.2f by the device's %u-pixel image limit",
+                 asked, g.scale, properties.limits.maxImageDimension2D);
+        if (g.scale > 1.0f)
+            LOGI("renderer: drawing at %.2fx the title's sizes, a %ux%u frame", g.scale,
                  g.presentWidth, g.presentHeight);
         // PES17_BALL_SCALE: the ball model drawn this many times larger (1 = off).
         double ballAsked = env::Real("PES17_BALL_SCALE", 1.0);
