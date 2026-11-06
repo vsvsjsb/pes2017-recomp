@@ -28,8 +28,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Prepare preinstalled Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          echo "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/cmdline-tools/16.0/bin" >> "$GITHUB_PATH"
+          yes | sdkmanager --licenses
 
       - name: Install Android build components
         run: |
