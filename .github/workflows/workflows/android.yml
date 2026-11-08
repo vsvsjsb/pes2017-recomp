@@ -1,0 +1,39 @@
+name: Build Don Libarti Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android build packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - name: Download Godot
+        run: |
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip -O godot.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.4.1-stable_linux.x86_64
+          sudo mv Godot_v4.4.1-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Install Godot export templates
+        run: |
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz -O templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/4.4.1.stable
+          unzip -q templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. ~/.local/share/godot/export_templates/4.4.1.stable/
+      - name: Export Android APK
+        run: |
+          mkdir -p build
+          godot --headless --path . --editor --quit
+          godot --headless --path . --export-debug Android build/DonLibarti.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Don-Libarti-Android
+          path: build/DonLibarti.apk
