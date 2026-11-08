@@ -59,12 +59,27 @@ jobs:
           EOF
 
       - name: Validate project and export APK
+        shell: bash
         run: |
-          set -e
           mkdir -p build
-          godot --headless --path . --editor --quit
-          godot --headless --path . --export-debug Android build/DonLibarti.apk
-          test -s build/DonLibarti.apk
+          set +e
+          godot --headless --path . --editor --quit --verbose 2>&1 | tee build/editor.log
+          editor_status=${PIPESTATUS[0]}
+          godot --headless --path . --export-debug Android build/DonLibarti.apk --verbose 2>&1 | tee build/export.log
+          export_status=${PIPESTATUS[0]}
+          if [ "$editor_status" -ne 0 ] || [ "$export_status" -ne 0 ] || [ ! -s build/DonLibarti.apk ]; then
+            echo "Godot editor status: $editor_status"
+            echo "Godot export status: $export_status"
+            exit 1
+          fi
+
+      - name: Upload diagnostic logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Don-Libarti-build-logs
+          path: build/*.log
+          if-no-files-found: ignore
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
