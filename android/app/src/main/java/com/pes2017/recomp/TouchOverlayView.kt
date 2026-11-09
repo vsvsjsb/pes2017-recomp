@@ -716,12 +716,12 @@ class TouchOverlayView @JvmOverloads constructor(
             "y" -> "THROUGH"
             else -> element.label
         }
-        val fillAlpha = (alpha * fadeFactor * if (pressed) 190 else 105).toInt().coerceIn(0, 255)
+        val fillAlpha = (alpha * fadeFactor * (if (pressed) 190 else 105)).toInt().coerceIn(0, 255)
         fill.color = Color.argb(fillAlpha, 19, 29, 39)
         canvas.drawCircle(cx, cy, r, fill)
 
         stroke.color = Color.argb(
-            (alpha * fadeFactor * if (pressed) 255 else 190).toInt().coerceIn(0, 255),
+            (alpha * fadeFactor * (if (pressed) 255 else 190)).toInt().coerceIn(0, 255),
             238, 243, 248,
         )
         stroke.strokeWidth = max(1.5f, r * 0.055f)
