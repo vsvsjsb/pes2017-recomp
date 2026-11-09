@@ -212,7 +212,7 @@ class ControlLayout private constructor(
                     // Right thumb: the four actions as the pad's diamond.
                     place("a", ControlKind.BUTTON, NativeBridge.A, "A", -110f, -52f, 68f),
                     place("b", ControlKind.BUTTON, NativeBridge.B, "B", -52f, -110f, 68f),
-                    place("x", ControlKind.BUTTON, NativeBridge.X, "X", -168f, -110f, 68f),
+                    place("x", ControlKind.BUTTON, NativeBridge.X, "X", -168f, -110f, 68f, visible = false),
                     place("y", ControlKind.BUTTON, NativeBridge.Y, "Y", -110f, -168f, 68f),
 
                     // The shoulders where a pad has them: L2 / L1 along the top left,
