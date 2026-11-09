@@ -583,7 +583,8 @@ class TouchOverlayView @JvmOverloads constructor(
     }
 
     private fun isOn(element: ControlElement): Boolean =
-        held.contains(element.id) || toggled.contains(element.id)
+        held.contains(element.id) || toggled.contains(element.id) ||
+            (element.id.equals("b", true) && (smartShotPointer >= 0 || smartShotTapActive))
 
     companion object {
         // The Xbox 360 pad colours, because the game's own prompts use them
