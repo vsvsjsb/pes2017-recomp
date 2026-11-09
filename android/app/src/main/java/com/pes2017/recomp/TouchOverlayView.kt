@@ -193,6 +193,7 @@ class TouchOverlayView @JvmOverloads constructor(
         var leftTrigger = 0
         var rightTrigger = if (smartShotRightTrigger) 255 else 0
         if (smartShotTapActive) buttons = buttons or NativeBridge.B
+        if (smartShotPointer >= 0 && smartShotMode == 1) buttons = buttons or NativeBridge.X
         var leftX = 0f
         var leftY = 0f
         var rightX = 0f
@@ -296,7 +297,7 @@ class TouchOverlayView @JvmOverloads constructor(
                             if (nextMode != smartShotMode && nextMode != 0) {
                                 smartShotMode = nextMode
                                 held.remove("b")
-                                if (smartShotMode == 1) held.add("x") else held.add("b")
+                                if (smartShotMode == 2) held.add("b")
                                 smartShotRightTrigger = smartShotMode == 2
                                 changed = true
                             }
@@ -388,7 +389,7 @@ class TouchOverlayView @JvmOverloads constructor(
                     smartShotTapRelease = releaseTap
                     smartShotHandler.postDelayed(releaseTap, 115L)
                 }
-                1 -> held.remove("x")
+                1 -> Unit // The Square/lob bit is injected while the gesture is active.
                 2 -> held.remove("b")
             }
             smartShotRightTrigger = false
