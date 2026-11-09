@@ -49,7 +49,8 @@ android {
     ndkVersion = setting("PES17_NDK_VERSION") ?: "28.2.13676358"
 
     defaultConfig {
-        applicationId = "com.pes2017.recomp"
+        // A distinct package ID lets Don Libarti install alongside the original app.
+        applicationId = "com.donlibarti.pes17"
         // Android 8.0. AAudio, ASurfaceControl-free presenting, and the
         // Vulkan 1.1 drivers this renderer needs all predate it; below that
         // there is no device with the memory to run this anyway.
@@ -108,7 +109,7 @@ android {
 
     // One executable, one app: PES 2017 is installed from the disc as it is.
     defaultConfig {
-        resValue("string", "app_name", "PES 2017")
+        resValue("string", "app_name", "Don Libarti PES 17")
     }
 
     // -PprebuiltNative=<dir with arm64-v8a/*.so> packages libraries built by
