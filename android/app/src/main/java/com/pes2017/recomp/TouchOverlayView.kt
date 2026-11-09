@@ -600,64 +600,6 @@ class TouchOverlayView @JvmOverloads constructor(
             // The controller bits stay unchanged; only the touch-button skin changes.
             drawPesMobileActionButton(canvas, element, cx, cy, r, alpha, fadeFactor, pressed)
         } else if (isRT || isLT) {
-            fill.color = Color.argb(
-                (alpha * fadeFactor * 140).toInt().coerceIn(0, 255),
-                18, 22, 28,
-            )
-            canvas.drawCircle(cx, cy, r, fill)
-
-            // Bezel rim stroke
-            stroke.color = Color.argb(
-                (alpha * fadeFactor * 180).toInt().coerceIn(0, 255),
-                48, 56, 70,
-            )
-            stroke.strokeWidth = max(1.5f, r * 0.05f)
-            canvas.drawCircle(cx, cy, r - stroke.strokeWidth * 0.5f, stroke)
-
-            // 2. Translucent jewel dome
-            val jewelR = r * 0.84f
-            val domeAlpha = if (pressed) 230 else 125
-            fill.color = Color.argb(
-                (alpha * fadeFactor * domeAlpha).toInt().coerceIn(0, 255),
-                Color.red(coreColor), Color.green(coreColor), Color.blue(coreColor),
-            )
-            canvas.drawCircle(cx, cy, jewelR, fill)
-
-            // Jewel perimeter rim
-            stroke.color = Color.argb(
-                (alpha * fadeFactor * (if (pressed) 255 else 180)).toInt().coerceIn(0, 255),
-                Color.red(glowColor), Color.green(glowColor), Color.blue(glowColor),
-            )
-            stroke.strokeWidth = max(1.5f, jewelR * 0.08f)
-            canvas.drawCircle(cx, cy, jewelR - stroke.strokeWidth * 0.5f, stroke)
-
-            // 3. Specular gloss arc highlight (top curve of the acrylic dome)
-            highlightPaint.color = Color.argb(
-                (alpha * fadeFactor * 150).toInt().coerceIn(0, 255),
-                255, 255, 255,
-            )
-            highlightPaint.strokeWidth = max(1.5f, jewelR * 0.07f)
-            val arcInset = jewelR * 0.22f
-            tempRect.set(cx - jewelR + arcInset, cy - jewelR + arcInset * 0.6f, cx + jewelR - arcInset, cy + jewelR - arcInset * 1.4f)
-            canvas.drawArc(tempRect, -145f, 110f, false, highlightPaint)
-
-            // 4. Just the pad's own name, as on a real controller: the
-            //    PlayStation symbol, or the Xbox letter.
-            val ink = Color.argb((alpha * fadeFactor * 255).toInt().coerceIn(0, 255), 255, 255, 255)
-            val shadow = Color.argb((alpha * fadeFactor * 140).toInt().coerceIn(0, 255), 0, 0, 0)
-            if (playStation) {
-                val size = jewelR * 0.40f
-                drawPsSymbol(canvas, id, cx, cy + 1.2f * density, size, shadow)
-                drawPsSymbol(canvas, id, cx, cy, size, ink)
-            } else {
-                text.textSize = jewelR * 0.95f
-                val letterY = cy - (text.descent() + text.ascent()) * 0.5f
-                text.color = shadow
-                canvas.drawText(label, cx, letterY + 1.2f * density, text)
-                text.color = ink
-                canvas.drawText(label, cx, letterY, text)
-            }
-        } else if (isRT || isLT) {
             // Xbox Ergonomic Trigger (RT / LT)
             val fillA = (alpha * fadeFactor * (if (pressed) 190 else 95)).toInt().coerceIn(0, 255)
             fill.color = Color.argb(fillA, Color.red(coreColor), Color.green(coreColor), Color.blue(coreColor))
