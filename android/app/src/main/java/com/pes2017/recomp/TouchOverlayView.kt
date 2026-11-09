@@ -596,8 +596,10 @@ class TouchOverlayView @JvmOverloads constructor(
         }
 
         if (isFaceButton) {
-            // Xbox 360 Jewel Face Button
-            // 1. Dark bezel collar
+            // Don Libarti: clean PES Mobile-style action buttons.
+            // The controller bits stay unchanged; only the touch-button skin changes.
+            drawPesMobileActionButton(canvas, element, cx, cy, r, alpha, fadeFactor, pressed)
+        } else if (isRT || isLT) {
             fill.color = Color.argb(
                 (alpha * fadeFactor * 140).toInt().coerceIn(0, 255),
                 18, 22, 28,
@@ -748,6 +750,61 @@ class TouchOverlayView @JvmOverloads constructor(
             text.textSize = r * (if (element.label.length > 2) 0.52f else 0.8f)
             canvas.drawText(element.label, cx, cy - (text.descent() + text.ascent()) * 0.5f, text)
         }
+    }
+
+    /**
+     * A restrained, readable action button skin inspired by PES Mobile.
+     * It deliberately avoids the bright Xbox/FC-style jewel treatment.
+     * The original A/B/X/Y bit values and native input path are untouched.
+     */
+    private fun drawPesMobileActionButton(
+        canvas: Canvas,
+        element: ControlElement,
+        cx: Float,
+        cy: Float,
+        r: Float,
+        alpha: Float,
+        fadeFactor: Float,
+        pressed: Boolean,
+    ) {
+        val label = when (element.id.lowercase()) {
+            "a" -> "PASS"
+            "b" -> "SHOOT"
+            "x" -> "LOB"
+            "y" -> "THROUGH"
+            else -> element.label
+        }
+        val fillAlpha = (alpha * fadeFactor * if (pressed) 190 else 105).toInt().coerceIn(0, 255)
+        fill.color = Color.argb(fillAlpha, 19, 29, 39)
+        canvas.drawCircle(cx, cy, r, fill)
+
+        stroke.color = Color.argb(
+            (alpha * fadeFactor * if (pressed) 255 else 190).toInt().coerceIn(0, 255),
+            238, 243, 248,
+        )
+        stroke.strokeWidth = max(1.5f, r * 0.055f)
+        canvas.drawCircle(cx, cy, r - stroke.strokeWidth * 0.5f, stroke)
+
+        if (pressed) {
+            highlightPaint.color = Color.argb(
+                (alpha * fadeFactor * 115).toInt().coerceIn(0, 255),
+                255, 255, 255,
+            )
+            highlightPaint.strokeWidth = max(1f, r * 0.025f)
+            canvas.drawCircle(cx, cy, r * 0.78f, highlightPaint)
+        }
+
+        text.textSize = r * when (label.length) {
+            in 7..20 -> 0.27f
+            in 5..6 -> 0.31f
+            else -> 0.38f
+        }
+        text.color = Color.argb(
+            (alpha * fadeFactor * 255).toInt().coerceIn(0, 255),
+            255, 255, 255,
+        )
+        val baseline = cy - (text.descent() + text.ascent()) * 0.5f
+        canvas.drawText(label, cx, baseline, text)
     }
 
     /** The PlayStation face symbol for a face button's id, drawn as lines so no font is needed. */
