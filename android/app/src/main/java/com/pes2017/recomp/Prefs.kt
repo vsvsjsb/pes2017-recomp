@@ -12,6 +12,7 @@ class Prefs(context: Context) {
 
     private val store: SharedPreferences =
         context.applicationContext.getSharedPreferences("pes17", Context.MODE_PRIVATE)
+    private val patchSettings = PatchSettings(context.applicationContext)
 
     // ---- graphics ---------------------------------------------------------
 
@@ -39,7 +40,7 @@ class Prefs(context: Context) {
      * also upgrades the old stored 1x/2x/3x values without losing the setting.
      */
     var renderScale: Int
-        get() = store.getInt(KEY_RENDER_SCALE, 100).let {
+        get() = patchSettings.int("renderScale", store.getInt(KEY_RENDER_SCALE, 100)).let {
             if (it in 1..3) it * 100 else it.coerceIn(100, 300)
         }
         set(value) = store.edit().putInt(KEY_RENDER_SCALE, value.coerceIn(100, 300)).apply()
@@ -49,7 +50,7 @@ class Prefs(context: Context) {
      * 50 to 100). 75 matches the runtime's own default for a phone.
      */
     var sceneScalePercent: Int
-        get() = store.getInt(KEY_SCENE_SCALE, 75).coerceIn(50, 100)
+        get() = patchSettings.int("sceneScalePercent", store.getInt(KEY_SCENE_SCALE, 75)).coerceIn(50, 100)
         set(value) = store.edit().putInt(KEY_SCENE_SCALE, value.coerceIn(50, 100)).apply()
 
     /**
@@ -57,7 +58,7 @@ class Prefs(context: Context) {
      * is a few pixels on a phone's screen, so it defaults to 150.
      */
     var ballScalePercent: Int
-        get() = store.getInt(KEY_BALL_SCALE, 150).coerceIn(100, 300)
+        get() = patchSettings.int("ballScalePercent", store.getInt(KEY_BALL_SCALE, 150)).coerceIn(100, 300)
         set(value) = store.edit().putInt(KEY_BALL_SCALE, value.coerceIn(100, 300)).apply()
 
     /**
@@ -68,7 +69,7 @@ class Prefs(context: Context) {
      * adaptive switch used, so a phone that had it on keeps it.
      */
     var heatScale: Boolean
-        get() = store.getBoolean(KEY_HEAT_SCALE, store.getBoolean(KEY_DYNAMIC_SCALE, false))
+        get() = patchSettings.bool("heatScale", store.getBoolean(KEY_HEAT_SCALE, store.getBoolean(KEY_DYNAMIC_SCALE, false)))
         set(value) = store.edit().putBoolean(KEY_HEAT_SCALE, value).apply()
 
     /**
@@ -78,7 +79,7 @@ class Prefs(context: Context) {
      * a slow match slow, so it is a separate choice from the heat one. Experimental.
      */
     var loadScale: Boolean
-        get() = store.getBoolean(KEY_LOAD_SCALE, store.getBoolean(KEY_DYNAMIC_SCALE, false))
+        get() = patchSettings.bool("loadScale", store.getBoolean(KEY_LOAD_SCALE, store.getBoolean(KEY_DYNAMIC_SCALE, false)))
         set(value) = store.edit().putBoolean(KEY_LOAD_SCALE, value).apply()
 
     /**
@@ -95,7 +96,7 @@ class Prefs(context: Context) {
      * renderer and the GPU their work and leaves the stands empty. On by default.
      */
     var crowd: Boolean
-        get() = store.getBoolean(KEY_CROWD, true)
+        get() = patchSettings.bool("crowd", store.getBoolean(KEY_CROWD, true))
         set(value) = store.edit().putBoolean(KEY_CROWD, value).apply()
 
     /** Bug-hunting experiments (Settings > Experiments); each is sent to the runtime at the next start. */
@@ -117,12 +118,12 @@ class Prefs(context: Context) {
 
     /** Show the frame before a lone black frame instead of it (PES17_BLACK_GUARD); reads every frame back, so it costs speed. */
     var blackGuard: Boolean
-        get() = store.getBoolean(KEY_BLACK_GUARD, false)
+        get() = patchSettings.bool("blackGuard", store.getBoolean(KEY_BLACK_GUARD, false))
         set(value) = store.edit().putBoolean(KEY_BLACK_GUARD, value).apply()
 
     /** FSR upscale and sharpen instead of a plain stretch (PES17_UPSCALER=fsr). */
     var fsr: Boolean
-        get() = store.getBoolean(KEY_FSR, false)
+        get() = patchSettings.bool("fsr", store.getBoolean(KEY_FSR, false))
         set(value) = store.edit().putBoolean(KEY_FSR, value).apply()
 
     /**
@@ -136,7 +137,7 @@ class Prefs(context: Context) {
 
     /** RCAS sharpness in stops (PES17_FSR_SHARPNESS): 0 is sharpest, 2 is softest. */
     var fsrSharpness: Float
-        get() = store.getFloat(KEY_FSR_SHARP, 0.2f).coerceIn(0f, 2f)
+        get() = patchSettings.float("fsrSharpness", store.getFloat(KEY_FSR_SHARP, 0.2f)).coerceIn(0f, 2f)
         set(value) = store.edit().putFloat(KEY_FSR_SHARP, value.coerceIn(0f, 2f)).apply()
 
     /**
@@ -144,7 +145,7 @@ class Prefs(context: Context) {
      * screen's shape and the frame is stretched to it, instead of black bars at the sides.
      */
     var widescreen: Boolean
-        get() = store.getBoolean(KEY_WIDESCREEN, true)
+        get() = patchSettings.bool("widescreen", store.getBoolean(KEY_WIDESCREEN, true))
         set(value) = store.edit().putBoolean(KEY_WIDESCREEN, value).apply()
 
     /**
@@ -153,13 +154,14 @@ class Prefs(context: Context) {
      * setting of its own, the old 30 FPS switch (cap30) stood for 30.
      */
     var fpsLimit: Int
-        get() = if (store.contains(KEY_FPS_LIMIT)) store.getInt(KEY_FPS_LIMIT, 60).coerceIn(30, 60)
-                else if (store.getBoolean(KEY_CAP30, false)) 30 else 60
+        get() = patchSettings.int("fpsLimit",
+            if (store.contains(KEY_FPS_LIMIT)) store.getInt(KEY_FPS_LIMIT, 60).coerceIn(30, 60)
+            else if (store.getBoolean(KEY_CAP30, false)) 30 else 60).coerceIn(30, 60)
         set(value) = store.edit().putInt(KEY_FPS_LIMIT, value.coerceIn(30, 60)).apply()
 
     /** Skip the large vertex shadow buffer (PES17_NO_SHADOW), for phones with little memory. */
     var lowMemory: Boolean
-        get() = store.getBoolean(KEY_LOW_MEMORY, false)
+        get() = patchSettings.bool("lowMemory", store.getBoolean(KEY_LOW_MEMORY, false))
         set(value) = store.edit().putBoolean(KEY_LOW_MEMORY, value).apply()
 
     /**
@@ -192,7 +194,7 @@ class Prefs(context: Context) {
      * (50 fps with it, about 44 without, Battery Saver on).
      */
     var multisampling: Boolean
-        get() = store.getBoolean(KEY_MSAA, true)
+        get() = patchSettings.bool("multisampling", store.getBoolean(KEY_MSAA, true))
         set(value) = store.edit().putBoolean(KEY_MSAA, value).apply()
 
     /**
@@ -206,7 +208,7 @@ class Prefs(context: Context) {
         // was far too little once DXT textures are decoded to RGBA on a GPU
         // without BC support -- PES 2017's pitch alone is 2048x2048 -- and the
         // match evicted and re-uploaded its textures every few frames.
-        get() = store.getInt(KEY_TEXTURE_MB, 0)
+        get() = patchSettings.int("textureBudgetMB", store.getInt(KEY_TEXTURE_MB, 0)).coerceAtLeast(0)
         set(value) = store.edit().putInt(KEY_TEXTURE_MB, value).apply()
 
     /**
