@@ -188,7 +188,15 @@ bool vk::renderer::Initialise()
         const bool depthResolve =
             (modern || vk::pipeline::DeviceHasExtension(g.physical, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME)) &&
             (resolve.supportedDepthResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
+#ifdef PES17_ANDROID
+        // Keep Android's EDRAM depth/shadow path single-sampled. The colour
+        // resolve path and several PES 2017 shadow-mask passes assume 1x
+        // samples; enabling host MSAA here can desynchronise those depth reads
+        // from the player-shadow atlas at higher quality settings.
+        g.msaa = false;
+#else
         g.msaa = !off && depthResolve && (g.sampleCounts & ~VkSampleCountFlags(VK_SAMPLE_COUNT_1_BIT));
+#endif
         if (g.msaa)
             LOGI("renderer: multisampling on: the device draws at%s%s%s%s, the title's 2x and 4x"
                  " surfaces are drawn at %ux and %ux%s",
