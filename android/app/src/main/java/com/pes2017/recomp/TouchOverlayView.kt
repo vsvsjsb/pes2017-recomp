@@ -10,8 +10,6 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
-import android.os.Handler
-import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.hypot
@@ -85,16 +83,6 @@ class TouchOverlayView @JvmOverloads constructor(
     private var lookPointer = -1
     private var lookLastX = 0f
     private var lookLastY = 0f
-
-    // Don Libarti smart shot: one SHOOT touch can resolve to Circle, Square,
-    // or Circle + R2 according to the vertical swipe.
-    private val smartShotHandler = Handler(Looper.getMainLooper())
-    private var smartShotPointer = -1
-    private var smartShotStartY = 0f
-    private var smartShotMode = 0 // 0 pending/tap, 1 upward lob, 2 downward finesse
-    private var smartShotRightTrigger = false
-    private var smartShotTapActive = false
-    private var smartShotTapRelease: Runnable? = null
 
     // ---- editing -----------------------------------------------------------
     private var dragPointer = -1
@@ -191,9 +179,7 @@ class TouchOverlayView @JvmOverloads constructor(
     private fun pushState() {
         var buttons = 0
         var leftTrigger = 0
-        var rightTrigger = if (smartShotRightTrigger) 255 else 0
-        if (smartShotTapActive) buttons = buttons or NativeBridge.B
-        if (smartShotPointer >= 0 && smartShotMode == 1) buttons = buttons or NativeBridge.X
+        var rightTrigger = 0
         var leftX = 0f
         var leftY = 0f
         var rightX = 0f
@@ -203,7 +189,14 @@ class TouchOverlayView @JvmOverloads constructor(
             if (!element.visible) continue
             val on = held.contains(element.id) || toggled.contains(element.id)
             when (element.kind) {
-                ControlKind.BUTTON -> if (on) buttons = buttons or element.value
+                ControlKind.BUTTON -> if (on) {
+                    if (element.id.equals("finesse", true)) {
+                        buttons = buttons or NativeBridge.B
+                        rightTrigger = 255
+                    } else {
+                        buttons = buttons or element.value
+                    }
+                }
                 ControlKind.TRIGGER -> if (on) {
                     if (element.value == 0) leftTrigger = 255 else rightTrigger = 255
                 }
@@ -235,12 +228,6 @@ class TouchOverlayView @JvmOverloads constructor(
         claims.clear()
         stickPositions.clear()
         held.clear()
-        smartShotPointer = -1
-        smartShotMode = 0
-        smartShotRightTrigger = false
-        smartShotTapActive = false
-        smartShotTapRelease?.let { smartShotHandler.removeCallbacks(it) }
-        smartShotTapRelease = null
         // Toggles survive a pause -- a player who was aiming down sights
         // before the phone rang is still aiming when they come back -- but
         // not the editor, which would otherwise leave a bit stuck down.
@@ -286,22 +273,7 @@ class TouchOverlayView @JvmOverloads constructor(
                     val element = claims[id] ?: continue
                     when (element.kind) {
                         ControlKind.STICK -> { moveStick(element, x, y); changed = true }
-                        ControlKind.BUTTON -> if (id == smartShotPointer && element.id.equals("b", true)) {
-                            val dy = y - smartShotStartY
-                            val threshold = max(22f * density, radius(element) * 0.42f)
-                            val nextMode = when {
-                                dy <= -threshold -> 1
-                                dy >= threshold -> 2
-                                else -> 0
-                            }
-                            if (nextMode != smartShotMode && nextMode != 0) {
-                                smartShotMode = nextMode
-                                held.remove("b")
-                                if (smartShotMode == 2) held.add("b")
-                                smartShotRightTrigger = smartShotMode == 2
-                                changed = true
-                            }
-                        }
+                        ControlKind.BUTTON -> Unit
                         else -> Unit
                     }
                 }
@@ -344,16 +316,6 @@ class TouchOverlayView @JvmOverloads constructor(
         }
         triggerHaptic()
         claims[pointerId] = element
-        if (element.kind == ControlKind.BUTTON && element.id.equals("b", true)) {
-            smartShotTapRelease?.let { smartShotHandler.removeCallbacks(it) }
-            smartShotTapRelease = null
-            smartShotPointer = pointerId
-            smartShotStartY = y
-            smartShotMode = 0
-            smartShotRightTrigger = false
-            smartShotTapActive = false
-            return true
-        }
         when (element.kind) {
             ControlKind.STICK -> moveStick(element, x, y)
             ControlKind.BUTTON, ControlKind.TRIGGER -> {
@@ -375,28 +337,6 @@ class TouchOverlayView @JvmOverloads constructor(
             return false
         }
         val element = claims.remove(pointerId) ?: return false
-        if (pointerId == smartShotPointer && element.id.equals("b", true)) {
-            when (smartShotMode) {
-                0 -> {
-                    smartShotTapActive = true
-                    smartShotTapRelease?.let { smartShotHandler.removeCallbacks(it) }
-                    val releaseTap = Runnable {
-                        smartShotTapActive = false
-                        smartShotTapRelease = null
-                        pushState()
-                        invalidate()
-                    }
-                    smartShotTapRelease = releaseTap
-                    smartShotHandler.postDelayed(releaseTap, 115L)
-                }
-                1 -> Unit // The Square/lob bit is injected while the gesture is active.
-                2 -> held.remove("b")
-            }
-            smartShotRightTrigger = false
-            smartShotPointer = -1
-            smartShotMode = 0
-            return true
-        }
         when (element.kind) {
             ControlKind.STICK -> stickPositions.remove(element.id)
             else -> held.remove(element.id)
@@ -583,8 +523,7 @@ class TouchOverlayView @JvmOverloads constructor(
     }
 
     private fun isOn(element: ControlElement): Boolean =
-        held.contains(element.id) || toggled.contains(element.id) ||
-            (element.id.equals("b", true) && (smartShotPointer >= 0 || smartShotTapActive))
+        held.contains(element.id) || toggled.contains(element.id)
 
     companion object {
         // The Xbox 360 pad colours, because the game's own prompts use them
