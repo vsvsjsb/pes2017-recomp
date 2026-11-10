@@ -1,4 +1,12 @@
 {
   "schema": 1,
-  "patches": []
+  "patches": [
+    {
+      "id": "graphics-profile",
+      "version": 1,
+      "target": "graphics.json",
+      "url": "https://raw.githubusercontent.com/vsvsjsb/pes2017-recomp/1080p-fractional-depth-test/patches/files/graphics.json",
+      "sha256": "64a906de13f7d5c42e49473a7d02fc3fe7aaa828bdddfd94257665271be65534"
+    }
+  ]
 }
