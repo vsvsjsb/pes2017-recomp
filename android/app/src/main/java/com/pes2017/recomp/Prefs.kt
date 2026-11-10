@@ -12,7 +12,12 @@ class Prefs(context: Context) {
 
     private val store: SharedPreferences =
         context.applicationContext.getSharedPreferences("pes17", Context.MODE_PRIVATE)
-    private val patchSettings = PatchSettings(context.applicationContext)
+    private var patchSettings = PatchSettings(context.applicationContext)
+
+    /** Refresh data-only overrides after a patch has been downloaded. */
+    fun reloadPatchSettings() {
+        patchSettings = PatchSettings(context.applicationContext)
+    }
 
     // ---- graphics ---------------------------------------------------------
 
