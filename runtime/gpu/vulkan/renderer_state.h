@@ -627,6 +627,25 @@ namespace vk::renderer::detail
     {
         return { uint32_t(HostCoord(int32_t(size.width), scale)), uint32_t(HostCoord(int32_t(size.height), scale)) };
     }
+    // Scale a region by its edges, not by rounding its origin and size separately.
+    // At fractional scales, round(origin + size) - round(origin) can differ by
+    // one pixel from round(size); Vulkan offsets and extents must describe the
+    // same pixel grid or depth/shadow copies can acquire seams.
+    inline uint32_t HostSpan(int32_t origin, uint32_t size, float scale = 1.0f)
+    {
+        const int32_t first = HostCoord(origin, scale);
+        const int32_t last = HostCoord(origin + int32_t(size), scale);
+        return uint32_t(std::max(0, last - first));
+    }
+    inline VkRect2D Scaled(VkRect2D rect, float scale = 1.0f)
+    {
+        const VkOffset2D first = Scaled(rect.offset, scale);
+        const VkOffset2D last = Scaled(
+            VkOffset2D{ rect.offset.x + int32_t(rect.extent.width),
+                        rect.offset.y + int32_t(rect.extent.height) }, scale);
+        return { first, { uint32_t(std::max(0, last.x - first.x)),
+                          uint32_t(std::max(0, last.y - first.y)) } };
+    }
     inline VkOffset3D Scaled(int32_t x, int32_t y, int32_t z, float scale = 1.0f)
     {
         return { HostCoord(x, scale), HostCoord(y, scale), z };
