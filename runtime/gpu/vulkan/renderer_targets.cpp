@@ -360,7 +360,7 @@ namespace vk::renderer::detail
         region.srcOffset = Scaled(at.x, at.y, 0, target.scale);
         region.dstSubresource = region.srcSubresource;
         region.dstOffset = region.srcOffset;
-        region.extent = { HostOf(width, target.scale), HostOf(height, target.scale), 1 };
+        region.extent = { HostSpan(at.x, width, target.scale), HostSpan(at.y, height, target.scale), 1 };
         const VkImage from = target.image, into = target.singleImage;
         Record([=](VkCommandBuffer command) {
             vkCmdResolveImage(command, from, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -410,7 +410,7 @@ namespace vk::renderer::detail
         // the twin comes out in TRANSFER_SRC, ready to be copied from.
         const VkImageView view = target.view, twinView = target.singleView;
         const VkImage twin = target.singleImage;
-        const VkRect2D area{ Scaled(at, target.scale), Scaled(VkExtent2D{ width, height }, target.scale) };
+        const VkRect2D area = Scaled(VkRect2D{ at, { width, height } }, target.scale);
         Record([=](VkCommandBuffer command) {
             constexpr VkImageAspectFlags kBoth = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
             // The draws before it wrote the depth; the copies before it read the twin.
