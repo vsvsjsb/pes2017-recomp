@@ -113,7 +113,7 @@ class ControlLayout private constructor(
 
     companion object {
         private const val FILE_NAME = "controls.json"
-        private const val FORMAT_VERSION = 6
+        private const val FORMAT_VERSION = 7
 
         fun load(context: Context): ControlLayout {
             // The whole screen (the match is full screen, into the cutout), in
@@ -138,7 +138,7 @@ class ControlLayout private constructor(
             try {
                 val root = JSONObject(file.readText())
                 val version = root.optInt("version", 1)
-                if (version < FORMAT_VERSION) {
+                if (version < 6) {
                     // An older layout (the shooter's look area, the d-pad, the old places): start over.
                     try { file.delete() } catch (_: Throwable) {}
                     return layout
@@ -161,6 +161,9 @@ class ControlLayout private constructor(
                     element.visible = item.optBoolean("visible", element.visible)
                     element.toggle = item.optBoolean("toggle", element.toggle)
                 }
+                // Version 7 adds a dedicated finesse-shot button and restores
+                // the separate lob button without discarding the player's layout.
+                if (version < 7) layout.find("x")?.visible = true
             } catch (_: Throwable) {
                 return defaults(widthDp, heightDp)
             }
@@ -212,7 +215,9 @@ class ControlLayout private constructor(
                     // Right thumb: the four actions as the pad's diamond.
                     place("a", ControlKind.BUTTON, NativeBridge.A, "A", -110f, -52f, 68f),
                     place("b", ControlKind.BUTTON, NativeBridge.B, "B", -52f, -110f, 68f),
-                    place("x", ControlKind.BUTTON, NativeBridge.X, "X", -168f, -110f, 68f, visible = false),
+                    place("x", ControlKind.BUTTON, NativeBridge.X, "X", -168f, -110f, 68f),
+                    // Dedicated finesse shot: Circle/B + R2/RT, separate from a normal shot.
+                    place("finesse", ControlKind.BUTTON, NativeBridge.B, "CURVE", -30f, -184f, 54f),
                     place("y", ControlKind.BUTTON, NativeBridge.Y, "Y", -110f, -168f, 68f),
 
                     // The shoulders where a pad has them: L2 / L1 along the top left,
