@@ -164,7 +164,8 @@ class MainActivity : AppCompatActivity() {
         updatesButton.setOnClickListener {
             select(updatesButton)
             showDetail(getString(R.string.check_updates), "")
-            checkForUpdates(manual = true)
+            checkForUpdates()
+            checkForPatches(manual = true)
         }
         quitButton.setOnClickListener {
             select(quitButton)
@@ -207,6 +208,7 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         checkForUpdates()
+        checkForPatches(manual = false)
         predownloadDriver()
     }
 
@@ -611,6 +613,39 @@ class MainActivity : AppCompatActivity() {
         entry.setTextColor(getColor(R.color.pes_gold))
     }
 
+    /**
+     * Data-only patches are independent of the APK. They are hash-verified and
+     * installed under filesDir/patches; code and native-library changes still
+     * use the normal signed APK update path.
+     */
+    private fun checkForPatches(manual: Boolean = false) {
+        thread(name = "patch-check", isDaemon = true) {
+            try {
+                val result = PatchUpdater.checkAndApply(this, PATCH_MANIFEST_URL)
+                if (manual) runOnUiThread {
+                    val message = when {
+                        result.updated > 0 -> "${result.message}. Restart the game to use the updated data."
+                        result.checked == 0 -> result.message
+                        else -> "Data files are already up to date."
+                    }
+                    AlertDialog.Builder(this)
+                        .setTitle("Data update")
+                        .setMessage(message)
+                        .setPositiveButton(R.string.close, null)
+                        .show()
+                }
+            } catch (error: Throwable) {
+                if (manual) runOnUiThread {
+                    AlertDialog.Builder(this)
+                        .setTitle("Data update")
+                        .setMessage("Could not check data patches: ${error.message ?: "network error"}")
+                        .setPositiveButton(R.string.close, null)
+                        .show()
+                }
+            }
+        }
+    }
+
     /** A newer published APK, if there is one: silent when offline. */
     private fun checkForUpdates(manual: Boolean = false) {
         thread(name = "update-check", isDaemon = true) {
@@ -743,6 +778,7 @@ class MainActivity : AppCompatActivity() {
         // Where this port publishes releases; the check reads the latest one.
         private const val RELEASES_PAGE = "https://github.com/dzakyraf/pes2017-recomp/releases/latest"
         private const val RELEASES_API = "https://api.github.com/repos/dzakyraf/pes2017-recomp/releases/latest"
+        private const val PATCH_MANIFEST_URL = "https://raw.githubusercontent.com/vsvsjsb/pes2017-recomp/1080p-fractional-depth-test/patches/manifest.json"
     }
 
     private fun showLastCrash(crash: String) {
