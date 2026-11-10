@@ -1377,7 +1377,7 @@ void vk::renderer::Draw(const gpu::RegisterFile& r, const DrawCall& call)
     viewport.y *= hostScale;
     viewport.width *= hostScale;
     viewport.height *= hostScale;
-    scissor = { Scaled(scissor.offset, g.currentScale), Scaled(scissor.extent, g.currentScale) };
+    scissor = Scaled(scissor, g.currentScale);
     if (g.currentWidth && g.currentHeight)
     {
         scissor.offset.x = std::max(0, scissor.offset.x);
