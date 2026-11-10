@@ -515,9 +515,13 @@ void vk::renderer::Resolve(const gpu::RegisterFile& r)
         copies[0].dstOffset = Scaled(int32_t(destX), int32_t(destY), 0, s);
         // Rounded at a fractional scale, so kept inside both images.
         const auto room = [](uint32_t size, int32_t at) { return size > uint32_t(at) ? size - uint32_t(at) : 0u; };
-        copies[0].extent = { std::min({ HostOf(width, s), room(HostOf(from->width, s), copies[0].srcOffset.x),
+        copies[0].extent = { std::min({ HostSpan(rect.offset.x, width, s),
+                                        HostSpan(int32_t(destX), width, s),
+                                        room(HostOf(from->width, s), copies[0].srcOffset.x),
                                         room(HostOf(into.width, s), copies[0].dstOffset.x) }),
-                             std::min({ HostOf(height, s), room(HostOf(from->height, s), copies[0].srcOffset.y),
+                             std::min({ HostSpan(rect.offset.y, height, s),
+                                        HostSpan(int32_t(destY), height, s),
+                                        room(HostOf(from->height, s), copies[0].srcOffset.y),
                                         room(HostOf(into.height, s), copies[0].dstOffset.y) }), 1 };
 
         if (from->format == VK_FORMAT_D24_UNORM_S8_UINT || from->format == VK_FORMAT_D32_SFLOAT_S8_UINT)
