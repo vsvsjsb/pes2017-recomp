@@ -244,6 +244,7 @@ class ControlLayout private constructor(
 
         /** The name printed on a control: its Xbox name, or the PlayStation one. */
         fun labelFor(element: ControlElement, playStation: Boolean): String {
+            if (element.id == "finesse") return if (playStation) "R2+" else "RT+"
             if (!playStation) return element.label
             return when (element.id) {
                 "a" -> "CROSS"
