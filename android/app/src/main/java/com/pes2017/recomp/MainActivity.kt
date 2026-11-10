@@ -622,6 +622,7 @@ class MainActivity : AppCompatActivity() {
         thread(name = "patch-check", isDaemon = true) {
             try {
                 val result = PatchUpdater.checkAndApply(this, PATCH_MANIFEST_URL)
+                if (result.updated > 0) prefs.reloadPatchSettings()
                 if (manual) runOnUiThread {
                     val message = when {
                         result.updated > 0 -> "${result.message}. Restart the game to use the updated data."
