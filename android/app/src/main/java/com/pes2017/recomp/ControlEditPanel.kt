@@ -126,11 +126,25 @@ class ControlEditPanel(
         snap.setOnCheckedChangeListener { _, checked -> overlay.snapToGrid = checked }
         actions.findViewById<Button>(R.id.edit_reset_one).setOnClickListener {
             val element = current ?: return@setOnClickListener
-            overlay.layout.reset(element.id)
-            overlay.layout.find(element.id)?.let { overlay.keepApart(it) }
-            overlay.select(overlay.layout.find(element.id))
-            overlay.refresh()
-            save()
+            if (element.comboInputs.isNotEmpty()) {
+                AlertDialog.Builder(activity)
+                    .setTitle("حذف الزر المركب")
+                    .setMessage("تحب تحذف هذا الزر الإضافي؟ الأزرار الأساسية ما تتأثرش.")
+                    .setNegativeButton("إلغاء", null)
+                    .setPositiveButton("حذف") { _, _ ->
+                        overlay.layout.elements.remove(element)
+                        overlay.select(null)
+                        overlay.refresh()
+                        save()
+                    }
+                    .show()
+            } else {
+                overlay.layout.reset(element.id)
+                overlay.layout.find(element.id)?.let { overlay.keepApart(it) }
+                overlay.select(overlay.layout.find(element.id))
+                overlay.refresh()
+                save()
+            }
         }
         actions.findViewById<Button>(R.id.edit_reset_all).setOnClickListener {
             AlertDialog.Builder(activity)
