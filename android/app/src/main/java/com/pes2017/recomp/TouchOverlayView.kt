@@ -190,7 +190,27 @@ class TouchOverlayView @JvmOverloads constructor(
             val on = held.contains(element.id) || toggled.contains(element.id)
             when (element.kind) {
                 ControlKind.BUTTON -> if (on) {
-                    if (element.id.equals("finesse", true)) {
+                    if (element.comboInputs.isNotEmpty()) {
+                        // A combined touch button contributes every selected input
+                        // to the same controller state, in this single frame.
+                        for (inputId in element.comboInputs) {
+                            val source = layout.find(inputId) ?: continue
+                            when (source.kind) {
+                                ControlKind.BUTTON -> {
+                                    if (source.id.equals("finesse", true)) {
+                                        buttons = buttons or NativeBridge.B
+                                        rightTrigger = 255
+                                    } else {
+                                        buttons = buttons or source.value
+                                    }
+                                }
+                                ControlKind.TRIGGER -> {
+                                    if (source.value == 0) leftTrigger = 255 else rightTrigger = 255
+                                }
+                                else -> Unit
+                            }
+                        }
+                    } else if (element.id.equals("finesse", true)) {
                         buttons = buttons or NativeBridge.B
                         rightTrigger = 255
                     } else {
