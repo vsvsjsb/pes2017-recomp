@@ -122,6 +122,31 @@ class ControlLayout private constructor(
         }
     }
 
+    /** Adds a user-created button without changing any of the default controls. */
+    fun addCombo(inputs: List<String>): ControlElement? {
+        val valid = inputs.distinct().filter { id ->
+            val source = find(id)
+            source != null && (source.kind == ControlKind.BUTTON || source.kind == ControlKind.TRIGGER) &&
+                source.comboInputs.isEmpty() && id != "finesse"
+        }
+        if (valid.size < 2) return null
+        var index = 1
+        while (find("combo_$index") != null) index++
+        val element = ControlElement(
+            id = "combo_$index",
+            kind = ControlKind.BUTTON,
+            value = 0,
+            label = valid.joinToString("+") { inputLabel(it, true) },
+            xFrac = 0.5f,
+            yFrac = 0.5f,
+            sizeDp = 64f,
+            alpha = 0.55f,
+            comboInputs = valid,
+        )
+        elements.add(element)
+        return element
+    }
+
     companion object {
         private const val FILE_NAME = "controls.json"
         private const val FORMAT_VERSION = 8
@@ -173,7 +198,7 @@ class ControlLayout private constructor(
                                 source.comboInputs.isEmpty() && source.id != "finesse"
                         }
                         if (validInputs.size < 2) continue
-                        element = ControlElement(
+                        val createdElement = ControlElement(
                             id = id,
                             kind = ControlKind.BUTTON,
                             value = 0,
@@ -186,7 +211,8 @@ class ControlLayout private constructor(
                             toggle = item.optBoolean("toggle", false),
                             comboInputs = validInputs,
                         )
-                        layout.elements.add(element)
+                        element = createdElement
+                        layout.elements.add(createdElement)
                     }
                     element ?: continue
                     element.xFrac = item.optDouble("x", element.xFrac.toDouble())
@@ -320,29 +346,5 @@ class ControlLayout private constructor(
             }
         }
 
-        /** Adds a user-created button without changing any of the default controls. */
-        fun addCombo(inputs: List<String>): ControlElement? {
-            val valid = inputs.distinct().filter { id ->
-                val source = find(id)
-                source != null && (source.kind == ControlKind.BUTTON || source.kind == ControlKind.TRIGGER) &&
-                    source.comboInputs.isEmpty() && id != "finesse"
-            }
-            if (valid.size < 2) return null
-            var index = 1
-            while (find("combo_$index") != null) index++
-            val element = ControlElement(
-                id = "combo_$index",
-                kind = ControlKind.BUTTON,
-                value = 0,
-                label = valid.joinToString("+") { inputLabel(it, true) },
-                xFrac = 0.5f,
-                yFrac = 0.5f,
-                sizeDp = 64f,
-                alpha = 0.55f,
-                comboInputs = valid,
-            )
-            elements.add(element)
-            return element
-        }
     }
 }
