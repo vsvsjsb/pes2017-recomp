@@ -45,6 +45,8 @@ data class ControlElement(
     val sub: String = "",
     /** What it does without the ball -- defending -- drawn smaller beneath. */
     val sub2: String = "",
+    /** Button ids fired together when this is a user-created combined button. */
+    val comboInputs: List<String> = emptyList(),
 )
 
 /**
@@ -85,6 +87,15 @@ class ControlLayout private constructor(
             item.put("alpha", element.alpha.toDouble())
             item.put("visible", element.visible)
             item.put("toggle", element.toggle)
+            if (element.comboInputs.isNotEmpty()) {
+                item.put("custom", true)
+                item.put("kind", element.kind.name)
+                item.put("value", element.value)
+                item.put("label", element.label)
+                val inputs = JSONArray()
+                element.comboInputs.forEach { inputs.put(it) }
+                item.put("comboInputs", inputs)
+            }
             array.put(item)
         }
         val root = JSONObject()
@@ -113,7 +124,7 @@ class ControlLayout private constructor(
 
     companion object {
         private const val FILE_NAME = "controls.json"
-        private const val FORMAT_VERSION = 7
+        private const val FORMAT_VERSION = 8
 
         fun load(context: Context): ControlLayout {
             // The whole screen (the match is full screen, into the cutout), in
@@ -149,7 +160,35 @@ class ControlLayout private constructor(
                     // Only what the app still knows about: an element dropped
                     // in a later version is ignored rather than resurrected,
                     // and a new one keeps its default.
-                    val element = layout.find(item.optString("id")) ?: continue
+                    val id = item.optString("id")
+                    var element = layout.find(id)
+                    if (element == null && item.optBoolean("custom", false)) {
+                        val inputsJson = item.optJSONArray("comboInputs") ?: continue
+                        val inputs = (0 until inputsJson.length()).mapNotNull { inputsJson.optString(it).takeIf(String::isNotBlank) }
+                            .distinct()
+                        if (inputs.size < 2) continue
+                        val validInputs = inputs.filter { inputId ->
+                            val source = layout.find(inputId)
+                            source != null && (source.kind == ControlKind.BUTTON || source.kind == ControlKind.TRIGGER) &&
+                                source.comboInputs.isEmpty() && source.id != "finesse"
+                        }
+                        if (validInputs.size < 2) continue
+                        element = ControlElement(
+                            id = id,
+                            kind = ControlKind.BUTTON,
+                            value = 0,
+                            label = item.optString("label", validInputs.joinToString("+")),
+                            xFrac = item.optDouble("x", 0.5).toFloat().coerceIn(0.02f, 0.98f),
+                            yFrac = item.optDouble("y", 0.5).toFloat().coerceIn(0.02f, 0.98f),
+                            sizeDp = item.optDouble("size", 64.0).toFloat().coerceIn(36f, 200f),
+                            alpha = item.optDouble("alpha", 0.55).toFloat().coerceIn(0.05f, 1f),
+                            visible = item.optBoolean("visible", true),
+                            toggle = item.optBoolean("toggle", false),
+                            comboInputs = validInputs,
+                        )
+                        layout.elements.add(element)
+                    }
+                    element ?: continue
                     element.xFrac = item.optDouble("x", element.xFrac.toDouble())
                         .toFloat().coerceIn(0.02f, 0.98f)
                     element.yFrac = item.optDouble("y", element.yFrac.toDouble())
@@ -244,6 +283,9 @@ class ControlLayout private constructor(
 
         /** The name printed on a control: its Xbox name, or the PlayStation one. */
         fun labelFor(element: ControlElement, playStation: Boolean): String {
+            if (element.comboInputs.isNotEmpty()) {
+                return element.comboInputs.joinToString("+") { inputLabel(it, playStation) }
+            }
             if (element.id == "finesse") return if (playStation) "R2+" else "RT+"
             if (!playStation) return element.label
             return when (element.id) {
@@ -261,6 +303,46 @@ class ControlLayout private constructor(
                 "back" -> "SELECT"
                 else -> element.label
             }
+        }
+
+        fun inputLabel(id: String, playStation: Boolean): String {
+            if (!playStation) return when (id) {
+                "a" -> "A"; "b" -> "B"; "x" -> "X"; "y" -> "Y"
+                "lb" -> "LB"; "rb" -> "RB"; "lt" -> "LT"; "rt" -> "RT"
+                "l3" -> "L3"; "r3" -> "R3"; "start" -> "START"; "back" -> "SELECT"
+                else -> id.uppercase()
+            }
+            return when (id) {
+                "a" -> "CROSS"; "b" -> "CIRCLE"; "x" -> "SQUARE"; "y" -> "TRIANGLE"
+                "lb" -> "L1"; "rb" -> "R1"; "lt" -> "L2"; "rt" -> "R2"
+                "l3" -> "L3"; "r3" -> "R3"; "start" -> "START"; "back" -> "SELECT"
+                else -> id.uppercase()
+            }
+        }
+
+        /** Adds a user-created button without changing any of the default controls. */
+        fun addCombo(inputs: List<String>): ControlElement? {
+            val valid = inputs.distinct().filter { id ->
+                val source = find(id)
+                source != null && (source.kind == ControlKind.BUTTON || source.kind == ControlKind.TRIGGER) &&
+                    source.comboInputs.isEmpty() && id != "finesse"
+            }
+            if (valid.size < 2) return null
+            var index = 1
+            while (find("combo_$index") != null) index++
+            val element = ControlElement(
+                id = "combo_$index",
+                kind = ControlKind.BUTTON,
+                value = 0,
+                label = valid.joinToString("+") { inputLabel(it, true) },
+                xFrac = 0.5f,
+                yFrac = 0.5f,
+                sizeDp = 64f,
+                alpha = 0.55f,
+                comboInputs = valid,
+            )
+            elements.add(element)
+            return element
         }
     }
 }
