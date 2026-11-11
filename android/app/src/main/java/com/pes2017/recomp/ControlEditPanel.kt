@@ -9,6 +9,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import kotlin.math.roundToInt
@@ -46,6 +47,14 @@ class ControlEditPanel(
             setText(R.string.edit_pick_one)
             setTextColor(0xFFFFFFFF.toInt())
             textSize = 12f
+        }, LinearLayout.LayoutParams(
+            0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f,
+        ))
+        addView(Button(activity).apply {
+            text = "＋ دمج أزرار"
+            isAllCaps = false
+            textSize = 12f
+            setOnClickListener { createCombinedButton() }
         })
     }
     private val resetOne: Button = view.findViewById(R.id.edit_reset_one)
@@ -140,6 +149,44 @@ class ControlEditPanel(
     }
 
     private fun save() = overlay.layout.save(activity)
+
+    /** Build one extra on-screen button that presses two or more original inputs together. */
+    private fun createCombinedButton() {
+        val sources = overlay.layout.elements.filter { element ->
+            (element.kind == ControlKind.BUTTON || element.kind == ControlKind.TRIGGER) &&
+                element.comboInputs.isEmpty() && element.id != "finesse"
+        }
+        if (sources.size < 2) {
+            Toast.makeText(activity, "ما كاينوش أزرار كافية للدمج", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val labels = sources.map { ControlLayout.inputLabel(it.id, overlay.playStation) }.toTypedArray()
+        val checked = BooleanArray(sources.size)
+        AlertDialog.Builder(activity)
+            .setTitle("اختار زرين أو أكثر")
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setNegativeButton("إلغاء", null)
+            .setPositiveButton("إنشاء الزر") { _, _ ->
+                val selected = sources.indices.filter { checked[it] }.map { sources[it].id }
+                if (selected.size < 2) {
+                    Toast.makeText(activity, "لازم تختار زرين على الأقل", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val created = overlay.layout.addCombo(selected)
+                if (created == null) {
+                    Toast.makeText(activity, "تعذر إنشاء الزر المركب", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                overlay.keepApart(created)
+                overlay.select(created)
+                overlay.refresh()
+                save()
+                Toast.makeText(activity, "تم إنشاء الزر المركب", Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
 
     fun attach() {
         if (attached) return
