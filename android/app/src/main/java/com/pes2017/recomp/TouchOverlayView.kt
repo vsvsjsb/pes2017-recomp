@@ -717,8 +717,12 @@ class TouchOverlayView @JvmOverloads constructor(
             stroke.strokeWidth = max(1.5f, r * 0.055f)
             canvas.drawCircle(cx, cy, r - stroke.strokeWidth * 0.5f, stroke)
             text.color = shade(alpha, pressed, faded)
-            text.textSize = r * (if (element.label.length > 2) 0.52f else 0.8f)
-            canvas.drawText(element.label, cx, cy - (text.descent() + text.ascent()) * 0.5f, text)
+            text.textSize = r * when {
+                element.comboInputs.isNotEmpty() -> 0.30f
+                element.label.length > 2 -> 0.52f
+                else -> 0.8f
+            }
+            canvas.drawText(label, cx, cy - (text.descent() + text.ascent()) * 0.5f, text)
         }
     }
 
